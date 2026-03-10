@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - app-data:/app/backend/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  litestream:
+    image: litestream/litestream:latest
+    volumes:
+      - app-data:/data
+      - ./infra/litestream.yml:/etc/litestream.yml
+    env_file:
+      - .env
+    command: replicate
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  app-data:

@@ -1,0 +1,35 @@
+{
+	"name": "create-fastapi-react",
+	"version": "0.1.0",
+	"description": "Scaffold a FastAPI + React full-stack app with auth, infra, and CI",
+	"bin": {
+		"create-fastapi-react": "./cli.ts"
+	},
+	"type": "module",
+	"scripts": {
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"test": "bun test"
+	},
+	"keywords": [
+		"fastapi",
+		"react",
+		"scaffold",
+		"generator",
+		"fullstack",
+		"vite",
+		"tailwind",
+		"sqlalchemy"
+	],
+	"author": "Jasen Carroll",
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@types/bun": "^1.2.0"
+	},
+	"files": [
+		"cli.ts",
+		"utils/",
+		"templates/"
+	]
+}

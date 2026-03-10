@@ -1,0 +1,16 @@
+{
+	"name": "{{projectName}}",
+	"private": true,
+	"scripts": {
+		"dev": "concurrently \"cd backend && uv run uvicorn app.main:app --reload --port 8000\" \"cd frontend && bun run dev\"",
+		"dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+		"dev:frontend": "cd frontend && bun run dev",
+		"infra:init": "bash infra/init.sh",
+		"infra:deploy": "bash infra/deploy.sh",
+		"infra:ssh": "bash infra/ssh.sh",
+		"infra:destroy": "bash infra/destroy.sh"
+	},
+	"devDependencies": {
+		"concurrently": "^9.0.0"
+	}
+}
