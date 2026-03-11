@@ -26,9 +26,7 @@ export function Auth() {
 			await apiPost('/api/auth/send-magic-link', { email });
 			setSent(true);
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to send magic link. Please try again.'
-			);
+			setError(err instanceof Error ? err.message : 'Failed to send magic link. Please try again.');
 		} finally {
 			setSending(false);
 		}
@@ -41,8 +39,7 @@ export function Auth() {
 					<CardHeader>
 						<CardTitle className="text-2xl">Check your email</CardTitle>
 						<CardDescription>
-							We sent a magic link to <strong>{email}</strong>. Click the link to sign
-							in.
+							We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
 						</CardDescription>
 					</CardHeader>
 				</Card>
