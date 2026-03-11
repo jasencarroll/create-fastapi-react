@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:///./data/my-app.db"
+    database_url: str = "postgresql://localhost/my-app"
     secret_key: str = "change-me-run-setup-sh"
     cors_origins: list[str] = ["http://localhost:5173"]
     app_url: str = "http://localhost:5173"

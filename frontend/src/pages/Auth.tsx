@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { apiPost } from '@/lib/api';
 
 export function Auth() {
 	const { user, loading } = useAuth();
@@ -22,21 +23,12 @@ export function Auth() {
 		setError('');
 
 		try {
-			const res = await fetch('/api/auth/send-magic-link', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email })
-			});
-
-			if (!res.ok) {
-				const data = await res.json();
-				setError(data.detail || 'Failed to send magic link');
-				return;
-			}
-
+			await apiPost('/api/auth/send-magic-link', { email });
 			setSent(true);
-		} catch {
-			setError('Failed to send magic link. Please try again.');
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : 'Failed to send magic link. Please try again.'
+			);
 		} finally {
 			setSending(false);
 		}
@@ -49,7 +41,8 @@ export function Auth() {
 					<CardHeader>
 						<CardTitle className="text-2xl">Check your email</CardTitle>
 						<CardDescription>
-							We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
+							We sent a magic link to <strong>{email}</strong>. Click the link to sign
+							in.
 						</CardDescription>
 					</CardHeader>
 				</Card>
