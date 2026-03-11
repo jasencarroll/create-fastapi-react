@@ -7,17 +7,17 @@ Full-stack project template: FastAPI + React with auth, infrastructure, and CI.
 ```bash
 bunx tiged jasencarroll/create-fastapi-react my-project
 cd my-project
-./setup.sh my-project
+./setup.sh
 ```
 
-The setup script renames the project, generates a secret key, installs dependencies, and initializes git.
+The setup script derives the project name from the directory, generates a secret key, installs dependencies, and initializes git.
 
 ### Magic-link auth variant
 
 ```bash
 bunx tiged jasencarroll/create-fastapi-react#magic-link my-project
 cd my-project
-./setup.sh my-project
+./setup.sh
 ```
 
 ## What You Get

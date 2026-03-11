@@ -7,7 +7,7 @@ Full-stack project template scaffolded via `bunx tiged`. Not a CLI — the repo 
 ```bash
 bunx tiged jasencarroll/create-fastapi-react my-project
 cd my-project
-./setup.sh my-project    # Renames project, generates secret, installs deps, inits git
+./setup.sh               # Derives name from directory, generates secret, installs deps, inits git
 ```
 
 Magic-link variant: `bunx tiged jasencarroll/create-fastapi-react#magic-link my-project`

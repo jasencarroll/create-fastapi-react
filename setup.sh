@@ -2,24 +2,14 @@
 set -euo pipefail
 
 # Post-clone setup for create-fastapi-react
-# Usage: ./setup.sh [project-name]
+# Infers project name from the current directory name.
+#
+# Usage:
+#   bunx tiged jasencarroll/create-fastapi-react my-cool-app
+#   cd my-cool-app
+#   ./setup.sh
 
-PROJECT_NAME="${1:-}"
-
-if [ -z "$PROJECT_NAME" ]; then
-  read -rp "Project name (kebab-case): " PROJECT_NAME
-fi
-
-# Validate
-if [ -z "$PROJECT_NAME" ]; then
-  echo "Error: Project name is required"
-  exit 1
-fi
-
-if ! echo "$PROJECT_NAME" | grep -qE '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'; then
-  echo "Error: Project name must be lowercase alphanumeric with hyphens"
-  exit 1
-fi
+PROJECT_NAME=$(basename "$(pwd)")
 
 # Derive app title (kebab-case to Title Case)
 APP_TITLE=$(echo "$PROJECT_NAME" | tr '-' '\n' | awk '{print toupper(substr($0,1,1)) substr($0,2)}' | tr '\n' ' ' | sed 's/ $//')
