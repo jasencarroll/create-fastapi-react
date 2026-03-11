@@ -50,9 +50,11 @@ echo "  Installing backend dependencies..."
 echo "  Installing frontend dependencies..."
 (cd frontend && bun install 2>&1) || echo "  Warning: frontend install failed. Run 'cd frontend && bun install' manually."
 
-# Run initial migration
+# Create database and run initial migration
+echo "  Creating database..."
+createdb "$PROJECT_NAME" 2>/dev/null || echo "  Database '$PROJECT_NAME' already exists."
 echo "  Running database migration..."
-(cd backend && uv run alembic upgrade head 2>&1) || echo "  Skipped — configure DATABASE_URL in .env first."
+(cd backend && uv run alembic upgrade head 2>&1) || echo "  Skipped — check DATABASE_URL in .env and ensure PostgreSQL is running."
 
 # Self-destruct
 rm -f setup.sh
