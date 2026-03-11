@@ -43,9 +43,7 @@ def register(body: RegisterRequest, db: DBSession = Depends(get_db)):
 
     token = create_session(db, user.id)
 
-    response = JSONResponse(
-        content={"user": {"id": user.id, "email": user.email}}
-    )
+    response = JSONResponse(content={"user": {"id": user.id, "email": user.email}})
     response.set_cookie(
         key=settings.session_cookie_name,
         value=token,
@@ -66,9 +64,7 @@ def login(body: LoginRequest, db: DBSession = Depends(get_db)):
 
     token = create_session(db, user.id)
 
-    response = JSONResponse(
-        content={"user": {"id": user.id, "email": user.email}}
-    )
+    response = JSONResponse(content={"user": {"id": user.id, "email": user.email}})
     response.set_cookie(
         key=settings.session_cookie_name,
         value=token,

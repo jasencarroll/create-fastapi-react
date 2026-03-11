@@ -54,9 +54,7 @@ def create_session(db: DBSession, user_id: str) -> str:
     return token
 
 
-def validate_session_token(
-    db: DBSession, token: str
-) -> tuple[Session, User] | None:
+def validate_session_token(db: DBSession, token: str) -> tuple[Session, User] | None:
     session_id = hash_token(token)
     session = db.query(Session).filter(Session.id == session_id).first()
     if not session:
@@ -74,9 +72,7 @@ def validate_session_token(
     # Auto-renew if within last 15 days
     renew_threshold = settings.session_expiry_days * 86400 // 2
     if session.expires_at - int(time.time()) < renew_threshold:
-        session.expires_at = (
-            int(time.time()) + settings.session_expiry_days * 86400
-        )
+        session.expires_at = int(time.time()) + settings.session_expiry_days * 86400
         db.commit()
 
     return session, user

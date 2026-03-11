@@ -12,7 +12,9 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     created_at = Column(Integer, default=lambda: int(time.time()))
-    updated_at = Column(Integer, default=lambda: int(time.time()), onupdate=lambda: int(time.time()))
+    updated_at = Column(
+        Integer, default=lambda: int(time.time()), onupdate=lambda: int(time.time())
+    )
 
 
 class Session(Base):

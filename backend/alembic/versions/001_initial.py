@@ -5,6 +5,7 @@ Revises:
 Create Date: 2025-01-01 00:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -36,9 +37,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_session_user_id"), "session", ["user_id"], unique=False
-    )
+    op.create_index(op.f("ix_session_user_id"), "session", ["user_id"], unique=False)
 
 
 def downgrade() -> None:
