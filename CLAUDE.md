@@ -1,40 +1,96 @@
 # create-fastapi-react
 
-CLI scaffolder that generates full-stack FastAPI + React projects.
+Full-stack project template scaffolded via `bunx tiged`. Not a CLI — the repo itself is the template.
 
-## Build & Dev
+## Usage
 
 ```bash
-bun install          # Install CLI dev dependencies
+bunx tiged jasencarroll/create-fastapi-react my-project
+cd my-project
+./setup.sh my-project    # Renames project, generates secret, installs deps, inits git
+```
+
+Magic-link variant: `bunx tiged jasencarroll/create-fastapi-react#magic-link my-project`
+
+## Build & Development
+
+### Backend (Python / FastAPI)
+```bash
+cd backend
+uv sync              # Install dependencies
+uv run uvicorn app.main:app --reload --port 8000
+uv run pytest        # Run tests
+uv run ruff check .  # Lint
+uv run ruff format . # Format
+uv run alembic upgrade head     # Run migrations
+uv run alembic revision --autogenerate -m "description"  # New migration
+```
+
+### Frontend (React / Vite)
+```bash
+cd frontend
+bun install          # Install dependencies
+bun run dev          # Dev server on :5173
+bun run build        # Production build
 bun run lint         # Biome lint
-bun run test         # Run tests
+bun run format       # Biome format
+```
+
+### Both (from root)
+```bash
+bun run dev          # Start backend + frontend concurrently
 ```
 
 ## Architecture
 
-- `cli.ts` - Primary CLI (Bun), interactive + non-interactive modes
-- `cli.py` - Python CLI (stdlib only), feature parity with cli.ts
-- `utils/template.ts` - Template engine: copies files, replaces `{{var}}` placeholders
-- `utils/template.py` - Python equivalent of template engine
-- `templates/default/` - Base project template (backend + frontend + infra)
-- `templates/magic-link/` - Overlay that replaces auth files for magic-link mode
+- **Backend**: FastAPI + SQLAlchemy + SQLite + Alembic
+- **Frontend**: React 19 + Vite + Tailwind v4 + shadcn/ui
+- **Auth**: Cookie-based sessions (SHA-256 hashed tokens, PBKDF2 passwords)
+- **API**: All endpoints under `/api/` prefix, proxied from Vite in dev
 
-## Template Variables
+## Key Directories
 
-- `{{projectName}}` - kebab-case project name
-- `{{appTitle}}` - Human-readable title
-- `{{secretKey}}` - Random 64-char hex secret
+```
+backend/
+  app/main.py          # FastAPI app, CORS, lifespan, static serving
+  app/config.py        # Pydantic Settings
+  app/database.py      # SQLAlchemy engine + session
+  app/models.py        # User + Session tables
+  app/routes/auth.py   # register, login, logout, me
+  app/routes/health.py # Health check
+  app/lib/auth.py      # Password hashing, session management
+  app/dependencies.py  # get_current_user
+  alembic/             # Database migrations
 
-## Testing
-
-```bash
-bun test                                          # Unit tests
-bunx create-fastapi-react --name test-app --quiet # Integration: scaffold
-cd test-app/backend && uv run pytest              # Verify backend
-cd test-app/frontend && bun run build             # Verify frontend
+frontend/
+  src/App.tsx          # Routes: /, /auth, /dashboard
+  src/hooks/useAuth    # Auth context + hook
+  src/pages/           # Home, Auth, Dashboard
+  src/components/      # Header, ProtectedRoute, shadcn/ui
 ```
 
-## Publishing
+## Template Defaults
 
-- npm: `npm publish` (uses package.json bin field)
-- PyPI: `uv build && uv publish` (uses pyproject.toml + hatchling)
+These placeholder values are replaced by `setup.sh`:
+- `my-app` — project name (kebab-case)
+- `My App` — display title
+- `change-me-run-setup-sh` — secret key
+
+## Database
+
+SQLite with SQLAlchemy. Timestamps are Unix epoch integers.
+
+Tables: `user` (id, email, password_hash, created_at, updated_at), `session` (id, user_id, expires_at)
+
+## Environment
+
+Required in `.env`: `DATABASE_URL`, `SECRET_KEY`
+Optional: `CORS_ORIGINS`
+
+## Infrastructure
+
+- `infra/init.sh` - Create DO droplet with hardened cloud-init
+- `infra/deploy.sh` - Docker build + SSH deploy
+- `Dockerfile` - Multi-stage: Bun builds frontend, uv runs backend
+- `docker-compose.yml` - App + Litestream SQLite backup
+- `Caddyfile` - Reverse proxy with auto TLS

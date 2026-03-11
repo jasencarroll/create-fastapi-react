@@ -1,35 +1,16 @@
 {
-	"name": "create-fastapi-react",
-	"version": "0.1.0",
-	"description": "Scaffold a FastAPI + React full-stack app with auth, infra, and CI",
-	"bin": {
-		"create-fastapi-react": "./cli.ts"
-	},
-	"type": "module",
+	"name": "my-app",
+	"private": true,
 	"scripts": {
-		"lint": "biome check .",
-		"format": "biome check --write .",
-		"test": "bun test"
+		"dev": "concurrently \"cd backend && uv run uvicorn app.main:app --reload --port 8000\" \"cd frontend && bun run dev\"",
+		"dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+		"dev:frontend": "cd frontend && bun run dev",
+		"infra:init": "bash infra/init.sh",
+		"infra:deploy": "bash infra/deploy.sh",
+		"infra:ssh": "bash infra/ssh.sh",
+		"infra:destroy": "bash infra/destroy.sh"
 	},
-	"keywords": [
-		"fastapi",
-		"react",
-		"scaffold",
-		"generator",
-		"fullstack",
-		"vite",
-		"tailwind",
-		"sqlalchemy"
-	],
-	"author": "Jasen Carroll",
-	"license": "MIT",
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6",
-		"@types/bun": "^1.2.0"
-	},
-	"files": [
-		"cli.ts",
-		"utils/",
-		"templates/"
-	]
+		"concurrently": "^9.0.0"
+	}
 }
