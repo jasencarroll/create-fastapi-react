@@ -28,6 +28,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(auth.verify_router)
 
 # Serve frontend static files in production
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"

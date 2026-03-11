@@ -21,7 +21,6 @@ def upgrade() -> None:
         "user",
         sa.Column("id", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
-        sa.Column("password_hash", sa.String(), nullable=False),
         sa.Column("created_at", sa.Integer(), nullable=True),
         sa.Column("updated_at", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -40,8 +39,18 @@ def upgrade() -> None:
         op.f("ix_session_user_id"), "session", ["user_id"], unique=False
     )
 
+    op.create_table(
+        "magic_link",
+        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("email", sa.String(), nullable=False),
+        sa.Column("expires_at", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.Integer(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
 
 def downgrade() -> None:
+    op.drop_table("magic_link")
     op.drop_index(op.f("ix_session_user_id"), table_name="session")
     op.drop_table("session")
     op.drop_index(op.f("ix_user_email"), table_name="user")

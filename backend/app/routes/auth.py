@@ -1,77 +1,61 @@
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session as DBSession
 
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user_optional
 from app.lib.auth import (
+    create_magic_link,
     create_session,
     generate_user_id,
-    hash_password,
     invalidate_session,
     validate_email,
-    verify_password,
+    validate_magic_link,
 )
 from app.models import User
-from app.schemas import AuthMeResponse, LoginRequest, RegisterRequest, UserResponse
+from app.schemas import AuthMeResponse, SendMagicLinkRequest, UserResponse
 
 router = APIRouter(prefix="/api/auth")
+verify_router = APIRouter()
 
 
-@router.post("/register")
-def register(body: RegisterRequest, db: DBSession = Depends(get_db)):
+@router.post("/send-magic-link")
+def send_magic_link(body: SendMagicLinkRequest, db: DBSession = Depends(get_db)):
     if not validate_email(body.email):
         raise HTTPException(status_code=400, detail="Invalid email address")
 
-    if len(body.password) < 8:
-        raise HTTPException(
-            status_code=400, detail="Password must be at least 8 characters"
-        )
+    token = create_magic_link(db, body.email)
+    verify_url = f"{settings.app_url}/auth/verify?token={token}"
 
-    existing = db.query(User).filter(User.email == body.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    # TODO: Send email via Resend or your preferred email service
+    # For development, print the link
+    print(f"\n  Magic link for {body.email}: {verify_url}\n")
 
-    user = User(
-        id=generate_user_id(),
-        email=body.email,
-        password_hash=hash_password(body.password),
-    )
-    db.add(user)
-    db.commit()
+    return {"success": True}
 
-    token = create_session(db, user.id)
 
-    response = JSONResponse(
-        content={"user": {"id": user.id, "email": user.email}}
-    )
+@verify_router.get("/auth/verify")
+def verify_magic_link(token: str, db: DBSession = Depends(get_db)):
+    result = validate_magic_link(db, token)
+    if not result:
+        return RedirectResponse(url="/auth?error=invalid-link")
+
+    email = result["email"]
+
+    # Find or create user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(id=generate_user_id(), email=email)
+        db.add(user)
+        db.commit()
+
+    session_token = create_session(db, user.id)
+
+    response = RedirectResponse(url="/dashboard")
     response.set_cookie(
         key=settings.session_cookie_name,
-        value=token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=settings.session_expiry_days * 86400,
-        path="/",
-    )
-    return response
-
-
-@router.post("/login")
-def login(body: LoginRequest, db: DBSession = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
-    if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    token = create_session(db, user.id)
-
-    response = JSONResponse(
-        content={"user": {"id": user.id, "email": user.email}}
-    )
-    response.set_cookie(
-        key=settings.session_cookie_name,
-        value=token,
+        value=session_token,
         httponly=True,
         secure=True,
         samesite="lax",
