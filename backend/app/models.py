@@ -11,7 +11,9 @@ class User(Base):
     id = Column(String, primary_key=True)
     email = Column(String, unique=True, nullable=False, index=True)
     created_at = Column(Integer, default=lambda: int(time.time()))
-    updated_at = Column(Integer, default=lambda: int(time.time()), onupdate=lambda: int(time.time()))
+    updated_at = Column(
+        Integer, default=lambda: int(time.time()), onupdate=lambda: int(time.time())
+    )
 
 
 class Session(Base):
