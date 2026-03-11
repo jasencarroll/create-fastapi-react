@@ -47,6 +47,9 @@ fi
 echo "  Installing backend dependencies..."
 (cd backend && uv sync 2>&1) || echo "  Warning: backend install failed. Run 'cd backend && uv sync' manually."
 
+echo "  Installing root dependencies..."
+bun install 2>&1 || echo "  Warning: root install failed. Run 'bun install' manually."
+
 echo "  Installing frontend dependencies..."
 (cd frontend && bun install 2>&1) || echo "  Warning: frontend install failed. Run 'cd frontend && bun install' manually."
 
