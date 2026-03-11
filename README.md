@@ -22,10 +22,10 @@ cd my-project
 
 ## What You Get
 
-- **Backend**: FastAPI + SQLAlchemy + SQLite + Alembic + Ruff
+- **Backend**: FastAPI + SQLAlchemy + PostgreSQL + Alembic + Ruff
 - **Frontend**: React 19 + Vite + Tailwind v4 + shadcn/ui + Biome
 - **Auth**: Email/password with cookie sessions (or magic-link)
-- **Infra**: Docker + Caddy + Litestream + Digital Ocean cloud-init
+- **Deploy**: Dockerfile + Railway
 - **CI**: GitHub Actions (lint + test + build)
 
 ## Project Structure
@@ -48,16 +48,12 @@ my-project/
       App.tsx           Routes: /, /auth, /dashboard
       hooks/useAuth.tsx Auth context + hook
       pages/            Home, Auth, Dashboard
+      lib/api.ts        API helpers (apiGet, apiPost, apiDelete)
       components/       Header, ProtectedRoute, shadcn/ui
 
-  infra/                Digital Ocean provisioning
-    init.sh             Create droplet with cloud-init
-    deploy.sh           Docker build + SSH deploy
-    cloud-init.yml      UFW, fail2ban, SSH hardening
-
   Dockerfile            Multi-stage: Bun builds frontend, uv runs backend
-  docker-compose.yml    App + Litestream SQLite backup
-  Caddyfile             Reverse proxy with auto TLS
+  docker-compose.yml    App + PostgreSQL (local dev)
+  railway.json          DOCKERFILE builder + health check
   .github/workflows/    CI: backend-lint, backend-test, frontend-lint, frontend-build
 ```
 
@@ -73,8 +69,8 @@ cd frontend && bun run lint              # Frontend lint
 
 ## Deploy
 
-```bash
-bun run infra:init                       # Create DO droplet
-# Point domain to droplet IP, wait for cloud-init
-bun run infra:deploy <host>              # Docker build + deploy
-```
+Push to GitHub with `railway.json` — Railway auto-deploys via Dockerfile. Set env vars in the Railway dashboard:
+
+- `DATABASE_URL` — Railway Postgres plugin provides this
+- `SECRET_KEY` — generate with `python3 -c "import secrets; print(secrets.token_hex(32))"`
+- `CORS_ORIGINS` — e.g. `["https://your-domain.com"]`
