@@ -1,6 +1,6 @@
 # create-fastapi-react
 
-Full-stack project template: FastAPI + React with auth, infrastructure, and CI.
+Full-stack project template: FastAPI + React with magic-link auth, audit trail, and CI.
 
 ## Usage
 
@@ -14,19 +14,12 @@ The setup script derives the project name from the directory, generates a secret
 
 **Prerequisites**: [uv](https://docs.astral.sh/uv/), [Bun](https://bun.sh/), PostgreSQL running locally.
 
-### Magic-link auth variant
-
-```bash
-bunx tiged jasencarroll/create-fastapi-react#magic-link my-project
-cd my-project
-./setup.sh
-```
-
 ## What You Get
 
 - **Backend**: FastAPI + SQLAlchemy + PostgreSQL + Alembic + Ruff
 - **Frontend**: React 19 + Vite + Tailwind v4 + shadcn/ui + Biome
-- **Auth**: Email/password with cookie sessions (or magic-link)
+- **Auth**: Magic-link (passwordless email) with cookie sessions
+- **Audit**: Part 11 compatible audit trail with before/after JSON capture
 - **Deploy**: Dockerfile + Railway
 - **CI**: GitHub Actions (lint + test + build)
 
@@ -39,15 +32,16 @@ my-project/
       main.py           FastAPI app, CORS, static serving
       config.py         Pydantic Settings
       database.py       SQLAlchemy engine + session
-      models.py         User + Session tables
-      routes/auth.py    register, login, logout, me
-      lib/auth.py       Password hashing, session management
+      models.py         User + Session + MagicLink tables
+      audit.py          Part 11 audit trail (AuditMixin + AuditLog)
+      routes/auth.py    send-magic-link, verify, logout, me
+      lib/auth.py       Magic link + session management
     alembic/            Database migrations
     tests/
 
   frontend/             React 19 + Vite + Tailwind v4 + shadcn
     src/
-      App.tsx           Routes: /, /auth, /dashboard
+      App.tsx           Routes: /, /auth, /auth/verify, /dashboard
       hooks/useAuth.tsx Auth context + hook
       pages/            Home, Auth, Dashboard
       lib/api.ts        API helpers (apiGet, apiPost, apiDelete)
@@ -76,3 +70,5 @@ Push to GitHub with `railway.json` — Railway auto-deploys via Dockerfile. Set 
 - `DATABASE_URL` — Railway Postgres plugin provides this
 - `SECRET_KEY` — generate with `python3 -c "import secrets; print(secrets.token_hex(32))"`
 - `CORS_ORIGINS` — e.g. `["https://your-domain.com"]`
+- `APP_URL` — your production URL (e.g. `https://your-domain.com`)
+- `RESEND_API_KEY` — from [Resend](https://resend.com)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiPost } from '@/lib/api';
 
 export function Auth() {
-	const { user, loading, refresh } = useAuth();
-	const navigate = useNavigate();
-	const [isLogin, setIsLogin] = useState(true);
+	const { user, loading } = useAuth();
 	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-	const [submitting, setSubmitting] = useState(false);
+	const [sending, setSending] = useState(false);
+	const [sent, setSent] = useState(false);
 	const [error, setError] = useState('');
 
 	if (loading) return null;
@@ -21,30 +19,42 @@ export function Auth() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setSubmitting(true);
+		setSending(true);
 		setError('');
 
-		const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-
 		try {
-			await apiPost(endpoint, { email, password });
-			await refresh();
-			navigate('/dashboard');
+			await apiPost('/api/auth/send-magic-link', { email });
+			setSent(true);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Network error. Please try again.');
+			setError(
+				err instanceof Error ? err.message : 'Failed to send magic link. Please try again.'
+			);
 		} finally {
-			setSubmitting(false);
+			setSending(false);
 		}
 	};
+
+	if (sent) {
+		return (
+			<div className="flex min-h-[calc(100vh-100px)] items-center justify-center p-8">
+				<Card className="w-full max-w-sm text-center">
+					<CardHeader>
+						<CardTitle className="text-2xl">Check your email</CardTitle>
+						<CardDescription>
+							We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
+						</CardDescription>
+					</CardHeader>
+				</Card>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex min-h-[calc(100vh-100px)] items-center justify-center p-8">
 			<Card className="w-full max-w-sm">
 				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">{isLogin ? 'Sign in' : 'Create account'}</CardTitle>
-					<CardDescription>
-						{isLogin ? 'Sign in to your account' : 'Create a new account to get started'}
-					</CardDescription>
+					<CardTitle className="text-2xl">Sign in</CardTitle>
+					<CardDescription>Enter your email and we'll send you a magic link.</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -58,20 +68,7 @@ export function Auth() {
 								autoComplete="email"
 								required
 								placeholder="you@example.com"
-								disabled={submitting}
-							/>
-						</div>
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="password">Password</Label>
-							<Input
-								id="password"
-								type="password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								autoComplete={isLogin ? 'current-password' : 'new-password'}
-								required
-								placeholder="At least 8 characters"
-								disabled={submitting}
+								disabled={sending}
 							/>
 						</div>
 
@@ -81,23 +78,9 @@ export function Auth() {
 							</p>
 						)}
 
-						<Button type="submit" disabled={submitting} className="mt-2">
-							{submitting ? 'Please wait...' : isLogin ? 'Sign in' : 'Create account'}
+						<Button type="submit" disabled={sending} className="mt-2">
+							{sending ? 'Sending...' : 'Send magic link'}
 						</Button>
-
-						<p className="text-center text-sm text-muted-foreground">
-							{isLogin ? "Don't have an account? " : 'Already have an account? '}
-							<button
-								type="button"
-								className="font-medium text-foreground underline"
-								onClick={() => {
-									setIsLogin(!isLogin);
-									setError('');
-								}}
-							>
-								{isLogin ? 'Sign up' : 'Sign in'}
-							</button>
-						</p>
 					</form>
 				</CardContent>
 			</Card>

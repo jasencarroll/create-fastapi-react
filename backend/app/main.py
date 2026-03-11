@@ -29,6 +29,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(auth.verify_router)
 
 # In production, serve the built React app with SPA catch-all
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"

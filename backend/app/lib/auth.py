@@ -7,7 +7,7 @@ from base64 import urlsafe_b64encode
 from sqlalchemy.orm import Session as DBSession
 
 from app.config import settings
-from app.models import Session, User
+from app.models import MagicLink, Session, User
 
 
 def generate_session_token() -> str:
@@ -16,22 +16,6 @@ def generate_session_token() -> str:
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
-
-
-def hash_password(password: str) -> str:
-    salt = os.urandom(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100_000)
-    return salt.hex() + ":" + dk.hex()
-
-
-def verify_password(password: str, password_hash: str) -> bool:
-    try:
-        salt_hex, dk_hex = password_hash.split(":")
-        salt = bytes.fromhex(salt_hex)
-        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100_000)
-        return dk.hex() == dk_hex
-    except (ValueError, AttributeError):
-        return False
 
 
 def validate_email(email: str) -> bool:
@@ -69,7 +53,6 @@ def validate_session_token(db: DBSession, token: str) -> tuple[Session, User] | 
     if not user:
         return None
 
-    # Auto-renew if within last 15 days
     renew_threshold = settings.session_expiry_days * 86400 // 2
     if session.expires_at - int(time.time()) < renew_threshold:
         session.expires_at = int(time.time()) + settings.session_expiry_days * 86400
@@ -84,3 +67,42 @@ def invalidate_session(db: DBSession, token: str) -> None:
     if session:
         db.delete(session)
         db.commit()
+
+
+# Magic link functions
+
+
+def generate_magic_link_token() -> str:
+    return urlsafe_b64encode(os.urandom(18)).decode()
+
+
+def create_magic_link(db: DBSession, email: str) -> str:
+    # Delete existing magic links for this email
+    db.query(MagicLink).filter(MagicLink.email == email).delete()
+
+    token = generate_magic_link_token()
+    magic_link = MagicLink(
+        id=hash_token(token),
+        email=email,
+        expires_at=int(time.time()) + settings.magic_link_expiry_minutes * 60,
+    )
+    db.add(magic_link)
+    db.commit()
+    return token
+
+
+def validate_magic_link(db: DBSession, token: str) -> dict | None:
+    link_id = hash_token(token)
+    link = db.query(MagicLink).filter(MagicLink.id == link_id).first()
+    if not link:
+        return None
+
+    if link.expires_at < int(time.time()):
+        db.delete(link)
+        db.commit()
+        return None
+
+    email = link.email
+    db.delete(link)  # Single use
+    db.commit()
+    return {"email": email}
