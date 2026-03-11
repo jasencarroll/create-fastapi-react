@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Run backend tests (with coverage)
+echo "Running backend tests..."
+cd "$REPO_ROOT/backend"
+uv run pytest
+
+# Run frontend unit tests (with coverage)
+echo "Running frontend tests..."
+cd "$REPO_ROOT/frontend"
+bun run test:coverage
+
+# Run frontend build check
+echo "Running frontend build..."
+bun run build
+
+# Run E2E tests
+echo "Running E2E tests..."
+cd "$REPO_ROOT"
+bun run test:e2e
+
+echo "Pre-push checks passed."

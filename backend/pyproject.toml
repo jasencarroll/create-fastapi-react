@@ -19,6 +19,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.25.0",
     "httpx>=0.28.0",
+    "pytest-cov>=7.0.0",
 ]
 
 [tool.ruff]
@@ -36,3 +37,15 @@ known-first-party = ["app"]
 "app/dependencies.py" = ["B008"]
 "app/models.py" = ["E501"]
 "alembic/**/*.py" = ["UP007", "UP035", "I001"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+]

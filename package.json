@@ -4,9 +4,11 @@
 	"scripts": {
 		"dev": "concurrently \"cd backend && uv run uvicorn app.main:app --reload --port 8000\" \"cd frontend && bun run dev\"",
 		"dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
-		"dev:frontend": "cd frontend && bun run dev"
+		"dev:frontend": "cd frontend && bun run dev",
+		"test:e2e": "bunx playwright test"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.58.2",
 		"concurrently": "^9.0.0"
 	}
 }

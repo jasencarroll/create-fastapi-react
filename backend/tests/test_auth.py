@@ -1,79 +1,103 @@
+import time
+
+import pytest
+from sqlalchemy import text
+
 from app.config import settings
+from app.lib.auth import (
+    create_magic_link,
+    create_session,
+    hash_token,
+    invalidate_session,
+    validate_email,
+    validate_magic_link,
+    validate_session_token,
+)
+from app.models import MagicLink, Session, User
 
 COOKIE_NAME = settings.session_cookie_name
 
 
-def test_register(client):
+def _create_user(db, email="test@example.com"):
+    from app.lib.auth import generate_user_id
+
+    user = User(id=generate_user_id(), email=email)
+    db.add(user)
+    db.commit()
+    return user
+
+
+def test_send_magic_link(client):
     response = client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
+        "/api/auth/send-magic-link",
+        json={"email": "test@example.com"},
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["user"]["email"] == "test@example.com"
-    assert "id" in data["user"]
+    assert response.json()["success"] is True
 
 
-def test_register_duplicate_email(client):
-    client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
-    )
+def test_send_magic_link_invalid_email(client):
     response = client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password456"},
+        "/api/auth/send-magic-link",
+        json={"email": "invalid"},
     )
     assert response.status_code == 400
 
 
-def test_register_invalid_email(client):
-    response = client.post(
-        "/api/auth/register",
-        json={"email": "invalid", "password": "password123"},
-    )
-    assert response.status_code == 400
+def test_verify_magic_link_creates_user(client, db):
+    token = create_magic_link(db, "new@example.com")
+    response = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/dashboard"
+    user = db.query(User).filter(User.email == "new@example.com").first()
+    assert user is not None
 
 
-def test_register_short_password(client):
-    response = client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "short"},
-    )
-    assert response.status_code == 400
+def test_verify_magic_link_existing_user(client, db):
+    _create_user(db, "existing@example.com")
+    token = create_magic_link(db, "existing@example.com")
+    response = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/dashboard"
 
 
-def test_login(client):
-    client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    response = client.post(
-        "/api/auth/login",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["user"]["email"] == "test@example.com"
+def test_verify_magic_link_invalid_token(client):
+    response = client.get("/auth/verify?token=bogus", follow_redirects=False)
+    assert response.status_code == 307
+    assert "error=invalid-link" in response.headers["location"]
 
 
-def test_login_wrong_password(client):
-    client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    response = client.post(
-        "/api/auth/login",
-        json={"email": "test@example.com", "password": "wrongpassword"},
-    )
-    assert response.status_code == 401
+def test_verify_magic_link_expired(client, db):
+    token = create_magic_link(db, "test@example.com")
+    link = db.query(MagicLink).filter(MagicLink.id == hash_token(token)).first()
+    link.expires_at = int(time.time()) - 1
+    db.commit()
+    response = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert response.status_code == 307
+    assert "error=invalid-link" in response.headers["location"]
 
 
-def test_me_authenticated(client):
-    register_response = client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    token = register_response.cookies.get(COOKIE_NAME)
+def test_magic_link_single_use(client, db):
+    token = create_magic_link(db, "test@example.com")
+    response = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/dashboard"
+    response = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert "error=invalid-link" in response.headers["location"]
+
+
+def test_magic_link_replaces_previous(db):
+    token1 = create_magic_link(db, "test@example.com")
+    token2 = create_magic_link(db, "test@example.com")
+    assert validate_magic_link(db, token1) is None
+    result = validate_magic_link(db, token2)
+    assert result is not None
+    assert result["email"] == "test@example.com"
+
+
+def test_me_authenticated(client, db):
+    user = _create_user(db)
+    token = create_session(db, user.id)
     client.cookies.set(COOKIE_NAME, token)
     response = client.get("/api/auth/me")
     assert response.status_code == 200
@@ -87,13 +111,88 @@ def test_me_unauthenticated(client):
     assert response.json()["user"] is None
 
 
-def test_logout(client):
-    register_response = client.post(
-        "/api/auth/register",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    token = register_response.cookies.get(COOKIE_NAME)
+def test_logout(client, db):
+    user = _create_user(db)
+    token = create_session(db, user.id)
     client.cookies.set(COOKIE_NAME, token)
     response = client.post("/api/auth/logout")
     assert response.status_code == 200
     assert response.json()["success"] is True
+
+
+def test_logout_without_session(client):
+    response = client.post("/api/auth/logout")
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+
+def test_me_with_invalid_token(client):
+    client.cookies.set(COOKIE_NAME, "bogus-token")
+    response = client.get("/api/auth/me")
+    assert response.status_code == 200
+    assert response.json()["user"] is None
+
+
+def test_expired_session(db):
+    user = _create_user(db)
+    token = create_session(db, user.id)
+    session = db.query(Session).filter(Session.id == hash_token(token)).first()
+    session.expires_at = int(time.time()) - 1
+    db.commit()
+    result = validate_session_token(db, token)
+    assert result is None
+    assert db.query(Session).filter(Session.id == hash_token(token)).first() is None
+
+
+def test_session_for_deleted_user(db):
+    user = _create_user(db)
+    token = create_session(db, user.id)
+    db.execute(text("ALTER TABLE session DROP CONSTRAINT session_user_id_fkey"))
+    db.execute(text('DELETE FROM "user" WHERE id = :id'), {"id": user.id})
+    db.commit()
+    db.expire_all()
+    result = validate_session_token(db, token)
+    assert result is None
+
+
+def test_session_auto_renewal(db):
+    user = _create_user(db)
+    token = create_session(db, user.id)
+    session = db.query(Session).filter(Session.id == hash_token(token)).first()
+    session.expires_at = int(time.time()) + 100
+    db.commit()
+    old_expiry = session.expires_at
+    result = validate_session_token(db, token)
+    assert result is not None
+    refreshed = db.query(Session).filter(Session.id == hash_token(token)).first()
+    assert refreshed.expires_at > old_expiry
+
+
+def test_invalidate_nonexistent_session(db):
+    invalidate_session(db, "nonexistent-token")
+
+
+def test_validate_email_valid():
+    assert validate_email("test@example.com") is True
+
+
+def test_validate_email_invalid():
+    assert validate_email("invalid") is False
+
+
+def test_get_current_user_raises_when_no_user():
+    from fastapi import HTTPException
+
+    from app.dependencies import get_current_user
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_current_user(user=None)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_current_user_returns_user():
+    from app.dependencies import get_current_user
+
+    user = User(id="test-id", email="test@example.com")
+    result = get_current_user(user=user)
+    assert result.id == "test-id"
