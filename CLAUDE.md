@@ -89,10 +89,8 @@ Tables: `user` (id, email, created_at, updated_at), `session` (id, user_id, expi
 Required in `.env`: `DATABASE_URL`, `SECRET_KEY`, `RESEND_API_KEY`
 Optional: `CORS_ORIGINS`, `APP_URL`
 
-## Infrastructure
+## Deployment (Railway)
 
-- `infra/init.sh` - Create DO droplet with hardened cloud-init
-- `infra/deploy.sh` - Docker build + SSH deploy
-- `Dockerfile` - Multi-stage: Bun builds frontend, uv runs backend
-- `docker-compose.yml` - App + PostgreSQL
-- `Caddyfile` - Reverse proxy with auto TLS
+- `railway.json` - DOCKERFILE builder + health check config
+- `Dockerfile` - Multi-stage: Bun builds frontend, uv runs backend, `${PORT:-8000}`
+- `docker-compose.yml` - Local dev with PostgreSQL service
