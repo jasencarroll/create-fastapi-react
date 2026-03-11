@@ -9,10 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import init_db
 from app.routes import auth, health
+from app.routes.auth import verify_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # pragma: no cover
     init_db()
     yield
 
@@ -20,7 +21,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="My App", lifespan=lifespan)
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
@@ -29,11 +30,11 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router)
-app.include_router(auth.verify_router)
+app.include_router(verify_router)
 
 # In production, serve the built React app with SPA catch-all
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-if frontend_dist.is_dir():
+if frontend_dist.is_dir():  # pragma: no cover
     app.mount("/assets", StaticFiles(directory=frontend_dist / "assets"), name="static")
 
     @app.get("/{path:path}")

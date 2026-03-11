@@ -26,9 +26,7 @@ export function Auth() {
 			await apiPost('/api/auth/send-magic-link', { email });
 			setSent(true);
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to send magic link. Please try again.'
-			);
+			setError(err instanceof Error ? err.message : 'Network error. Please try again.');
 		} finally {
 			setSending(false);
 		}
@@ -37,11 +35,11 @@ export function Auth() {
 	if (sent) {
 		return (
 			<div className="flex min-h-[calc(100vh-100px)] items-center justify-center p-8">
-				<Card className="w-full max-w-sm text-center">
-					<CardHeader>
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center">
 						<CardTitle className="text-2xl">Check your email</CardTitle>
 						<CardDescription>
-							We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
+							We sent a magic link to <strong>{email}</strong>
 						</CardDescription>
 					</CardHeader>
 				</Card>
@@ -54,7 +52,7 @@ export function Auth() {
 			<Card className="w-full max-w-sm">
 				<CardHeader className="text-center">
 					<CardTitle className="text-2xl">Sign in</CardTitle>
-					<CardDescription>Enter your email and we'll send you a magic link.</CardDescription>
+					<CardDescription>Enter your email to receive a magic link</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form onSubmit={handleSubmit} className="flex flex-col gap-4">

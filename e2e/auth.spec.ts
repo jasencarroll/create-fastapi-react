@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('auth flow', () => {
 	test('send magic link shows confirmation', async ({ page }) => {
 		await page.goto('/auth');
-		await expect(page.getByText('Sign in')).toBeVisible();
+		await expect(page.getByText('Enter your email to receive a magic link')).toBeVisible();
 
 		await page.getByLabel('Email').fill('test@example.com');
 		await page.getByRole('button', { name: 'Send magic link' }).click();
@@ -22,7 +22,7 @@ test.describe('auth flow', () => {
 
 	test('dashboard redirects to auth when not logged in', async ({ page }) => {
 		await page.goto('/dashboard');
-		await expect(page.getByText('Sign in')).toBeVisible();
+		await expect(page.getByText('Enter your email to receive a magic link')).toBeVisible();
 	});
 
 	test('home page shows Get Started when not logged in', async ({ page }) => {

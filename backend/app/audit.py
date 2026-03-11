@@ -12,7 +12,7 @@ import time
 import uuid
 from contextvars import ContextVar
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, event
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, event, inspect
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import object_mapper
 
@@ -75,7 +75,7 @@ def _get_primary_key(obj) -> str:
 
 def _is_auditable(obj) -> bool:
     """Skip audit logging for the AuditLog table itself and Session table."""
-    return obj.__tablename__ not in ("audit_log", "session")
+    return obj.__tablename__ not in ("audit_log", "session", "magic_link")
 
 
 def _stamp_actor(obj):
@@ -132,9 +132,9 @@ def register_audit_listeners():
             _stamp_actor(obj)
             # Capture old values from history
             old_data = {}
-            mapper = object_mapper(obj)
-            for attr in mapper.column_attrs:
-                history = attr.history
+            state = inspect(obj)
+            for attr in object_mapper(obj).column_attrs:
+                history = state.attrs[attr.key].history
                 if history.has_changes():
                     old_data[attr.key] = history.deleted[0] if history.deleted else None
                 else:

@@ -13,11 +13,11 @@ TEST_DATABASE_URL = os.environ.get(
 )
 
 
-def _ensure_test_db_exists():
-    """Create the test database if it doesn't exist."""
+def _ensure_db_exists(url):
+    """Create a database if it doesn't exist."""
     from urllib.parse import urlparse, urlunparse
 
-    parsed = urlparse(TEST_DATABASE_URL)
+    parsed = urlparse(url)
     db_name = parsed.path.lstrip("/")
     maintenance_url = urlunparse(parsed._replace(path="/postgres"))
 
@@ -32,10 +32,20 @@ def _ensure_test_db_exists():
     maint_engine.dispose()
 
 
-_ensure_test_db_exists()
+_ensure_db_exists(TEST_DATABASE_URL)
+
+# Also ensure the app database exists (needed by test_database.py which tests init_db)
+from app.config import settings  # noqa: E402
+
+_ensure_db_exists(settings.database_url)
 
 engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Register audit listeners once for test suite
+from app.audit import register_audit_listeners  # noqa: E402
+
+register_audit_listeners()
 
 
 @pytest.fixture(autouse=True)

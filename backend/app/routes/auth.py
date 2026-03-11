@@ -28,22 +28,20 @@ def send_magic_link(body: SendMagicLinkRequest, db: DBSession = Depends(get_db))
     token = create_magic_link(db, body.email)
     verify_url = f"{settings.app_url}/auth/verify?token={token}"
 
-    # TODO: Send email via Resend or your preferred email service
-    # For development, print the link
-    print(f"\n  Magic link for {body.email}: {verify_url}\n")
+    print(f"[DEV] Magic link for {body.email}: {verify_url}")
 
-    return {"success": True}
+    return {"message": "Magic link sent"}
 
 
 @verify_router.get("/auth/verify")
-def verify_magic_link(token: str, db: DBSession = Depends(get_db)):
+def verify(token: str, db: DBSession = Depends(get_db)):
     result = validate_magic_link(db, token)
     if not result:
-        return RedirectResponse(url="/auth?error=invalid-link")
+        return RedirectResponse(
+            url="/auth?error=invalid_or_expired_link", status_code=302
+        )
 
     email = result["email"]
-
-    # Find or create user
     user = db.query(User).filter(User.email == email).first()
     if not user:
         user = User(id=generate_user_id(), email=email)
@@ -52,7 +50,7 @@ def verify_magic_link(token: str, db: DBSession = Depends(get_db)):
 
     session_token = create_session(db, user.id)
 
-    response = RedirectResponse(url="/dashboard")
+    response = RedirectResponse(url="/dashboard", status_code=302)
     response.set_cookie(
         key=settings.session_cookie_name,
         value=session_token,

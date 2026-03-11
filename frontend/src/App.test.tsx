@@ -39,9 +39,7 @@ describe('App', () => {
 		});
 		renderApp('/auth');
 		await waitFor(() => {
-			expect(
-				screen.getByText("Enter your email and we'll send you a magic link.")
-			).toBeInTheDocument();
+			expect(screen.getByText('Sign in')).toBeInTheDocument();
 		});
 	});
 
