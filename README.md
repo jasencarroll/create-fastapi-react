@@ -10,7 +10,9 @@ cd my-project
 ./setup.sh
 ```
 
-The setup script derives the project name from the directory, generates a secret key, installs dependencies, and initializes git.
+The setup script derives the project name from the directory, generates a secret key, installs dependencies, creates the PostgreSQL database, runs migrations, and initializes git.
+
+**Prerequisites**: [uv](https://docs.astral.sh/uv/), [Bun](https://bun.sh/), PostgreSQL running locally.
 
 ### Magic-link auth variant
 
