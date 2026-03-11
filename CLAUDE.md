@@ -43,7 +43,7 @@ bun run dev          # Start backend + frontend concurrently
 
 ## Architecture
 
-- **Backend**: FastAPI + SQLAlchemy + SQLite + Alembic
+- **Backend**: FastAPI + SQLAlchemy + PostgreSQL + Alembic
 - **Frontend**: React 19 + Vite + Tailwind v4 + shadcn/ui
 - **Auth**: Cookie-based sessions (SHA-256 hashed tokens, PBKDF2 passwords)
 - **API**: All endpoints under `/api/` prefix, proxied from Vite in dev
@@ -66,6 +66,8 @@ frontend/
   src/App.tsx          # Routes: /, /auth, /dashboard
   src/hooks/useAuth    # Auth context + hook
   src/pages/           # Home, Auth, Dashboard
+  src/lib/api.ts       # API helpers (apiGet, apiPost, apiDelete)
+  src/lib/utils.ts     # cn() utility
   src/components/      # Header, ProtectedRoute, shadcn/ui
 ```
 
@@ -78,7 +80,7 @@ These placeholder values are replaced by `setup.sh`:
 
 ## Database
 
-SQLite with SQLAlchemy. Timestamps are Unix epoch integers.
+PostgreSQL with SQLAlchemy. Timestamps are Unix epoch integers.
 
 Tables: `user` (id, email, password_hash, created_at, updated_at), `session` (id, user_id, expires_at)
 
@@ -92,5 +94,5 @@ Optional: `CORS_ORIGINS`
 - `infra/init.sh` - Create DO droplet with hardened cloud-init
 - `infra/deploy.sh` - Docker build + SSH deploy
 - `Dockerfile` - Multi-stage: Bun builds frontend, uv runs backend
-- `docker-compose.yml` - App + Litestream SQLite backup
+- `docker-compose.yml` - App + PostgreSQL
 - `Caddyfile` - Reverse proxy with auto TLS

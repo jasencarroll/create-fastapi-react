@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { apiPost } from '@/lib/api';
 
 export function Auth() {
 	const { user, loading, refresh } = useAuth();
@@ -26,22 +27,11 @@ export function Auth() {
 		const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
 		try {
-			const res = await fetch(endpoint, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
-			});
-
-			if (!res.ok) {
-				const data = await res.json();
-				setError(data.detail || 'Something went wrong');
-				return;
-			}
-
+			await apiPost(endpoint, { email, password });
 			await refresh();
 			navigate('/dashboard');
-		} catch {
-			setError('Network error. Please try again.');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Network error. Please try again.');
 		} finally {
 			setSubmitting(false);
 		}

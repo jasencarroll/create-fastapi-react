@@ -3,23 +3,31 @@ services:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - app-data:/app/backend/data
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/my-app
     env_file:
       - .env
-    restart: unless-stopped
-
-  litestream:
-    image: litestream/litestream:latest
-    volumes:
-      - app-data:/data
-      - ./infra/litestream.yml:/etc/litestream.yml
-    env_file:
-      - .env
-    command: replicate
     restart: unless-stopped
     depends_on:
-      - app
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: my-app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
-  app-data:
+  pgdata:

@@ -37,10 +37,10 @@ replace "my-app" "$PROJECT_NAME"
 replace "My App" "$APP_TITLE"
 replace "change-me-run-setup-sh" "$SECRET_KEY"
 
-# Create .env from .env.example
-if [ -f .env.example ]; then
-  cp .env.example .env
-  chmod 600 .env
+# Create .env files from examples
+if [ -f backend/.env.example ]; then
+  cp backend/.env.example backend/.env
+  chmod 600 backend/.env
 fi
 
 # Install dependencies
