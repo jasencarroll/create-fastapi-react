@@ -14,7 +14,7 @@ test.describe('auth flow', () => {
 
 	test('invalid email shows error', async ({ page }) => {
 		await page.goto('/auth');
-		await page.getByLabel('Email').fill('invalid');
+		await page.getByLabel('Email').fill('a@b');
 		await page.getByRole('button', { name: 'Send magic link' }).click();
 
 		await expect(page.getByText('Invalid email address')).toBeVisible();
