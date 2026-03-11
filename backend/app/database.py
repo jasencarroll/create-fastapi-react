@@ -21,5 +21,7 @@ def get_db():
 
 def init_db():
     from app import models  # noqa: F401
+    from app.audit import register_audit_listeners
 
+    register_audit_listeners()
     Base.metadata.create_all(bind=engine)
